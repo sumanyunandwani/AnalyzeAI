@@ -46,3 +46,10 @@ coverage/
 *.cover
 *.lcov
 .nyc_output/
+
+### Backup ###
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
