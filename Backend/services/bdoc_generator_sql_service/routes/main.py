@@ -49,10 +49,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Stripe for payments
-stripe_api_key = "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"
-stripe_publishable_key = "pk_live_51RqLPxGWg8H1CYMicNbnuZiNm6pV9kGWBZkX94cWol0bm04WlfziffK2d0hIyfpYACjRH6iuooO1qZ2nJT9bvffH00qdmibrJr"
-
 # Initiate Validation Utility
 request_validator = RequestValidation(logger=logger)
 
