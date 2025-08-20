@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  app:
+    image: bdoc_generate_sql_app:latest
+    container_name: bdoc_generator_sql_app
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+    networks:
+      - bdocs_network
+    volumes:
+      - ./bdoc_generator_sql_logs:/app/logs/
+      - ./bdoc_generator_sql_pdfs:/app/pdfs/
+      - ./bdoc_generator_sql_sqls:/app/sql_scripts/
+
+  db:
+    image: postgres:15
+    container_name: bdoc_generator_sql_db
+    restart: always
+    environment:
+      POSTGRES_USER: bdoc_generator_sql_app
+      POSTGRES_PASSWORD: bdoc_generator_sql_password
+      POSTGRES_DB: bdoc_generator_sql_db
+    volumes:
+      - ./bdoc_generator_sql_data:/var/lib/postgresql/data
+    networks:
+      - bdocs_network
+networks:
+  bdocs_network:
+    driver: bridge
+  
+      
