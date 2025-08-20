@@ -1,0 +1,22 @@
+podels:
+    sql_podel:
+        - prompt: "Is this SQL - {sql_script}, Please answer in only Yes/No."
+          need_answer: "Yes"
+          error_message:
+            message: "Not Valid SQL. Please Enter a Valid SQL and try again"
+            status_code: 422
+        
+        - prompt: "Generate a modern, colorful, well-structured XHTML document (with CSS in a <style> tag) for a SQL script in the {business} domain. Include purpose, overview, dependencies, business logic, transformations, table/column definitions, output, domain-specific notes, and any assumptions or known issues. Aim for a format that impresses business stakeholders."
+    
+    instagram_podel:
+        
+        - prompt: "Is this a Instagram File, Please answer in only Yes/No."
+          need_answer: "Yes"
+        
+        - prompt: "Generate a document explaining the business logic of all the fields in the Instagram Query"
+    
+    test_podel:
+        - prompt: "Hey, Please answer in only Yes/No. Are you ready?"
+          need_answer: "No"
+        
+        - prompt: "7 + 3 = 15?"

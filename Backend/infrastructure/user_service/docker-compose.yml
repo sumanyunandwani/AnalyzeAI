@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  app:
+    image: user_service_app:latest
+    container_name: user_service_app
+    ports:
+      - "8000:8000"
+    
+    volumes:
+      - ./user_service_logs:/app/logs/
+    depends_on:
+      - db
+    networks:
+      - bdocs_network
+
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: user_service_app
+      POSTGRES_PASSWORD: user_service_password
+      POSTGRES_DB: user_service_db
+    volumes:
+      - ./user_service_db:/var/lib/postgresql/data
+    networks:
+      - bdocs_network
+networks:
+  bdocs_network:
+    driver: bridge
+
+volumes:
+  db_data:
+  
+      
