@@ -1,6 +1,6 @@
 // Business domains available in the application
 export const BUSINESS_DOMAINS = [
-  { value: 'finance', label: 'Finance' },
+  { value: 'Finance', label: 'Finance' },
   { value: 'healthcare', label: 'Healthcare' },
   { value: 'retail', label: 'Retail' },
   { value: 'technology', label: 'Technology' },

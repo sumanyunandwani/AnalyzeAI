@@ -1,10 +1,4 @@
-/**
- * Mock API service for B-Docs
- * Replace the mockGenerateDocument function with actual API call
- */
-
-// Mock API delay (simulates network latency)
-const API_MOCK_DELAY = 3000; // 3 seconds
+import API_BASE_URL, { API_BASE_URL1 } from '../config/api';
 
 /**
  * Generates B-Doc based on SQL query and business domain
@@ -15,20 +9,40 @@ const API_MOCK_DELAY = 3000; // 3 seconds
  */
 export const generateDocument = async ({ sqlQuery, businessDomain }) => {
   try {
-    // TODO: Replace this mock with actual API call
-    // Example:
-    // const response = await fetch('/api/generate-document', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify({ sqlQuery, businessDomain }),
-    // });
-    // const data = await response.json();
-    // return data;
+    const response = await fetch(`${API_BASE_URL1}/prompt/sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies for authentication
+      body: JSON.stringify({ 
+        script: sqlQuery, 
+        business: businessDomain 
+      }),
+    });
 
-    // Mock implementation
-    return await mockGenerateDocument({ sqlQuery, businessDomain });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || `Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Transform the response to match the expected format
+    // Adjust this based on your actual API response structure
+    return {
+      success: true,
+      data: {
+        documentId: data.documentId || `DOC-${Date.now()}`,
+        fileName: data.fileName || `${businessDomain}_analysis_${new Date().toISOString().slice(0, 10)}.pdf`,
+        fileSize: data.fileSize,
+        generatedAt: data.generatedAt || new Date().toISOString(),
+        downloadUrl: data.downloadUrl,
+        message: data.message || 'Document generated successfully',
+        // Include the raw response in case there are other fields
+        ...data
+      }
+    };
   } catch (error) {
     console.error('Error generating document:', error);
     throw error;
@@ -36,29 +50,47 @@ export const generateDocument = async ({ sqlQuery, businessDomain }) => {
 };
 
 /**
- * Mock function to simulate API response
- * Remove this when implementing actual API
+ * Downloads a generated document
+ * @param {string} documentId - The ID of the document to download
+ * @returns {Promise<Blob>} - The document blob
  */
-const mockGenerateDocument = ({ sqlQuery, businessDomain }) => {
-  return new Promise((resolve, reject) => {
-    // Simulate API processing time
-    setTimeout(() => {
-      // Simulate random success/failure (90% success rate)
-      if (Math.random() > 0.9) {
-        reject(new Error('Failed to generate document. Please try again.'));
-      } else {
-        resolve({
-          success: true,
-          data: {
-            documentId: `DOC-${Date.now()}`,
-            fileName: `${businessDomain}_analysis_${new Date().toISOString().slice(0, 10)}.pdf`,
-            fileSize: Math.floor(Math.random() * 1000) + 500, // Random size between 500-1500 KB
-            generatedAt: new Date().toISOString(),
-            downloadUrl: `https://api.example.com/documents/download/${Date.now()}`,
-            message: 'Document generated successfully'
-          }
-        });
-      }
-    }, API_MOCK_DELAY);
-  });
+export const downloadDocument = async (documentId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/${documentId}/download`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download document: ${response.status}`);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    throw error;
+  }
+};
+
+/**
+ * Gets the status of a document generation request
+ * @param {string} requestId - The ID of the generation request
+ * @returns {Promise<Object>} - The status response
+ */
+export const getDocumentStatus = async (requestId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/documents/status/${requestId}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get document status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting document status:', error);
+    throw error;
+  }
 };
