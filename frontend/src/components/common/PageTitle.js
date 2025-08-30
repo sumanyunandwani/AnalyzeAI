@@ -31,7 +31,7 @@ const PageTitle = () => {
           textShadow: '2px 2px 4px rgba(0, 0, 0, 0.3)'
         }}
       >
-        B-Docs
+        AnalyzeAI
       </Typography>
     </Box>
   );

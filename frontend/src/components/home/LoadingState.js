@@ -50,7 +50,7 @@ const LoadingState = () => {
             fontStyle: 'italic'
           }}
         >
-          B-Docs is an intelligent documentation platform that deciphers SQL logic into clear, 
+          AnalyzeAI is an intelligent documentation platform that deciphers SQL logic into clear, 
           business-aligned insights, bridging technical depth with executive clarity. 
           It empowers organizations to elevate data transparency, streamline collaboration, 
           and drive strategic decision-making.
