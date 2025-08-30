@@ -1,7 +1,7 @@
 import API_BASE_URL, { API_BASE_URL1 } from '../config/api';
 
 /**
- * Generates B-Doc based on SQL query and business domain
+ * Generates AnalyzeAI based on SQL query and business domain
  * @param {Object} params - Request parameters
  * @param {string} params.sqlQuery - SQL query to analyze
  * @param {string} params.businessDomain - Selected business domain

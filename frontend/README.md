@@ -74,7 +74,7 @@ export const generateDocument = async ({ sqlQuery, businessDomain }) => {
 
 - SQL Query input with validation
 - Business domain selection (disabled until query is entered)
-- Loading state with informative message about B-Docs
+- Loading state with informative message about AnalyzeAI
 - Success/Error notifications
 - Automatic form reset after successful download
 - Mock file download functionality

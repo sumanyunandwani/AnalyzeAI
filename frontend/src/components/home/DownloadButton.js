@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@mui/material';
 
-const DownloadButton = ({ onClick, disabled = false, label = "Download B-Doc" }) => {
+const DownloadButton = ({ onClick, disabled = false, label = "Download Business Report" }) => {
   return (
     <Button
       variant="contained"

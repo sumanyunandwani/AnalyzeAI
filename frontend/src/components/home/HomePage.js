@@ -53,7 +53,7 @@ const HomePage = () => {
     // TODO: Implement actual file download using documentInfo.downloadUrl
     // For now, we'll create a mock file
     const mockContent = `
-B-DOCS ANALYSIS REPORT
+AnalyzeAI ANALYSIS REPORT
 =====================
 
 Business Domain: ${documentInfo.businessDomain}

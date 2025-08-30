@@ -97,7 +97,7 @@ const LoginDialog = ({ open, onClose }) => {
 
       <DialogTitle sx={{ textAlign: 'center', pt: 3 }}>
         <Typography variant="h5" component="div" fontWeight="600">
-          Welcome to B-Docs
+          Welcome to AnalyzeAI
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Sign in to continue
