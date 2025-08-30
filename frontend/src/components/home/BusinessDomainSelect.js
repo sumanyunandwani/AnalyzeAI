@@ -2,7 +2,7 @@ import React from 'react';
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 
 const businessDomains = [
-  { value: 'finance', label: 'Finance' },
+  { value: 'Finance', label: 'Finance' },
   { value: 'healthcare', label: 'Healthcare' },
   { value: 'retail', label: 'Retail' },
   { value: 'technology', label: 'Technology' },
