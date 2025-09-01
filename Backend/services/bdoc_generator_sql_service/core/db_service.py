@@ -256,3 +256,15 @@ class DBService:
             sql_stmt = select(PDFs.file_path).where(PDFs.pdf_id == pdf_id)
             result = await session.execute(sql_stmt)
         return result.scalar_one_or_none()
+
+    async def get_all_business(self) -> list[str]:
+        """
+        Retrieves all the business names in the DB
+
+        Returns:
+            list[str]: List of business name in DB
+        """
+        async with self._db.get_session() as session:
+            sql_stmt = select(Businesses.name)
+            result = await session.execute(sql_stmt)
+        return result.scalars().all()
