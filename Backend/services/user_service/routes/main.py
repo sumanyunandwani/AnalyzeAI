@@ -8,7 +8,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from core.custom_logger import CustomLogger
 from core.generate_id import GenerateId
@@ -40,14 +40,14 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     SessionMiddleware,
     secret_key = os.getenv("SESSION_SECRET"),
-    same_site = "lax",
+    same_site = "lax"
     # https_only = True # NOTE: Turn it on in Production
 )
 
 # CORS middleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,7 +76,7 @@ async def login(tag: str, request: Request):
         RedirectResponse: A redirect to the Google OAuth login page.
     """
     # Validate the tag
-    if not oauth_service.is_valid_oauth_tag(tag=tag):
+    if not await oauth_service.is_valid_oauth_tag(tag=tag):
         raise HTTPException(status_code=400, detail="Invalid OAuth provider tag")
 
     # Log the login attempt
@@ -116,7 +116,10 @@ async def auth(tag: str, request: Request, response: Response):
     logger.debug(f"User authenticated: {dict(user)}")
 
     # Setting JWT Token in cookies
-    response = RedirectResponse(url=os.getenv("REDIRECT_URL_AFTER_OAUTH"))
+    redirect_response = RedirectResponse(
+        url=os.getenv("REDIRECT_URL_AFTER_OAUTH"),
+        status_code=307
+    )
 
     # JWT Token generation and setting in cookies
     cookie = await jwt_auth.generate_jwt_from_token(
@@ -125,12 +128,13 @@ async def auth(tag: str, request: Request, response: Response):
             tag=tag
         )
 
-    response.set_cookie(
+    redirect_response.set_cookie(
         key="access_token",
         value=cookie,
-        httponly=os.getenv("HTTPS_ONLY").lower() in ('true', '1', 'yes'),
-        secure=False, # NOTE: Set to True in production
-        samesite="strict"
+        httponly=True,
+        secure=False,
+        samesite="lax",
+        path="/"
     )
 
     # Log the response cookie
@@ -144,4 +148,39 @@ async def auth(tag: str, request: Request, response: Response):
         db_connection=app.state.db
     )
 
-    return response
+    return redirect_response
+
+# Endpoint to handle status calls on start
+@app.get("/status")
+async def get_status(request: Request):
+    """
+    Send Name and Email Details if Logged In
+
+    Args:
+        request (Request): Request Object
+
+    Raises:
+        HTTPException: 401 error due to no authentication
+        HTTPException: 400 error due to invalid JWT access token
+        HTTPException: 403 error due to invalid or expired token
+
+    Returns:
+        JSONResponse: Send JSON with name and email keys
+    """
+    token = request.cookies.get("access_token")
+    if not token:
+        logger.warning("No Access Token found in requests!")
+        return JSONResponse({"name": "Guest"})
+
+    try:
+        payload = await jwt_auth.decode_jwt(token)
+        name = payload.get("name")
+        email = payload.get("email")
+        if not name or not email:
+            logger.warning(f"Name: {name} or email: {email} missing!")
+            return JSONResponse({"name": name or "Guest"})
+        logger.debug(f"Extracted Name: {name} and Email: {email} from access token")
+        return JSONResponse({"name": name, "email": email})
+    except Exception as e:
+        logger.error(f"JWT decode error: {e}")
+        return JSONResponse({"name": "Guest"})

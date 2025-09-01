@@ -15,7 +15,7 @@ class Requests(Base):
     """
     __tablename__ = "requests"
     request_id = Column(String, primary_key=True, index=True, nullable=False)
-    user_id = Column(Integer, nullable=True)
+    user_id = Column(String, nullable=True)
     pdf_id = Column(Integer, nullable=False)
     ip_address = Column(String, nullable=True)
     created_on = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

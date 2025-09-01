@@ -60,3 +60,12 @@ class DatabaseWrapper:
         self.logger.debug(f"Updated count for user {user_id} to {new_count}")
 
         return True
+
+    async def get_all_business(self) -> list[str]:
+        """
+        Retrieve list of all business from db
+
+        Returns:
+            list[str]: List of business names
+        """
+        return await self.db_service.get_all_business()

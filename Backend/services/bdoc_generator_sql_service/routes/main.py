@@ -140,3 +140,28 @@ async def update_user_count(count: int, request: Request) -> JSONResponse:
         content={"success": success, "message": "User count updated successfully."},
         status_code=200
     )
+
+# Endpoint to get all the business names
+@app.get("/business/names")
+async def get_all_business_names() -> JSONResponse:
+    """
+    Retrieve all Supporting Business Names
+
+    Args:
+        request (Request): Request Object
+
+    Returns:
+        JSONResponse: JSON with key names and value list of business names
+    """
+    # Initialize the DatabaseWrapper
+    db_wrapper = DatabaseWrapper(
+        db_connection=app.state.db,
+        logger=logger
+    )
+
+    # Return JSON Response where names is the key
+    return JSONResponse(
+        {
+            "names": await db_wrapper.get_all_business()
+        }
+    )
