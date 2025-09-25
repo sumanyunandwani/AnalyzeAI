@@ -7,11 +7,12 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from core.request_validation import RequestValidation
 from celery_task.celery_app import celery_app
 from celery.result import AsyncResult
+from celery.exceptions import CeleryError
 from core.database_connection import AsyncSQLAlchemySingleton
 from core.custom_logger import CustomLogger
 from core.database_wrapper import DatabaseWrapper
@@ -21,7 +22,7 @@ from celery_task.task import execute_prompt_task
 # ----------------------------- Initializing the environment -----------------------------
 # Startup and shutdown events for the FastAPI application
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(fastapi_app: FastAPI):
     """
     Lifespan event to initialize the database connection and create schema if not exists.
     """
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
     db.init_engine()
     await db.create_schema_if_not_exists()
     await db.seed_business_domains()
-    app.state.db = db
+    fastapi_app.state.db = db
     yield
     # NOTE: Cleanup can be added here if needed
 
@@ -102,14 +103,13 @@ async def enqueue_prompt(tag: str, request: Request = None) -> JSONResponse:
             "task_id": task.id,
             "status": "queued"
         })
-    except Exception as e:
-        logger.error(f"Error enqueueing task: {e}")
+
+    except (CeleryError, ValueError, RuntimeError) as e:
+        logger.error(f"Celery error enqueueing task: {e}")
         return JSONResponse(
             content={"error": str(e)},
             status_code=500
         )
-
-
 
 # Endpoint to update the user count
 @app.put("/update/user/count/{count}")

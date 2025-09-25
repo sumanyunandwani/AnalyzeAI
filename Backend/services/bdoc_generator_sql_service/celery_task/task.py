@@ -33,6 +33,6 @@ def execute_prompt_task(
 
         return {"status": "completed", "file_path": file_path}
 
-    except Exception as e:
+    except (ValueError, TypeError, AttributeError, RuntimeError) as e:
         logger.error("Task failed: %s", e)
         return {"status": "failed", "error": str(e)}
