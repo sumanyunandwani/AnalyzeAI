@@ -1,8 +1,14 @@
+"""
+Custom logger setup with file and console handlers, including SQLAlchemy engine logging.
+"""
 import logging
 import os
 import datetime
 
 class CustomLogger:
+    """
+    Custom Logger class to set up logging with file and console handlers.
+    """
     @staticmethod
     def setup_logger(name: str, logs_dir: str = None) -> logging.Logger:
         """

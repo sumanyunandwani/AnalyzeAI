@@ -8,7 +8,7 @@ It also includes methods for checking user
 or IP address counts and updating the database after prompt execution.
 """
 import hashlib
-import re
+import asyncio
 import os
 from logging import Logger
 from typing import Optional
@@ -144,6 +144,17 @@ class PromptWrapper:
 
         # Return the file path
         return file_path
+
+    def execute_sync(self) -> Optional[str]:
+        """
+        Synchronous wrapper for the execute method.
+        This is useful for environments that do not support async/await.
+
+        Returns:
+            Optional[str]: 
+                The file path of the generated PDF document or None if no requests left.
+        """
+        return asyncio.run(self.execute())
 
     async def _execute_for_ip(self, ip_address: str) -> Optional[int]:
         """
@@ -319,9 +330,9 @@ class PromptWrapper:
 
         # Log the successful execution
         self.logger.info("Updated Database...")
-        self.logger.debug(f"File Path: {file_path}")
-        self.logger.debug(f"Request ID: {request_id}")
-        self.logger.debug(f"User ID: {user_id}")
-        self.logger.debug(f"IP Address: {ip_address}")
-        self.logger.debug(f"Business ID: {business_id}")
+        self.logger.debug("File Path: %s", file_path)
+        self.logger.debug("Request ID: %s", request_id)
+        self.logger.debug("User ID: %s", user_id)
+        self.logger.debug("IP Address: %s", ip_address)
+        self.logger.debug("Business ID: %s", business_id)
             

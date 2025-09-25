@@ -1,14 +1,21 @@
+"""
+This module contains the main FastAPI application for handling prompt execution,
+user count updates, and retrieving business names.
+"""
 # ----------------------------- Importing Required Libraries -----------------------------
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from core.request_validation import RequestValidation
-from core.prompt_wrapper import PromptWrapper
+from celery_task.celery_app import celery_app
+from celery.result import AsyncResult
 from core.database_connection import AsyncSQLAlchemySingleton
 from core.custom_logger import CustomLogger
 from core.database_wrapper import DatabaseWrapper
+from celery_task.task import execute_prompt_task
 
 
 # ----------------------------- Initializing the environment -----------------------------
@@ -35,7 +42,7 @@ app = FastAPI(lifespan=lifespan)
 # Initialize the session middleware
 app.add_middleware(
     SessionMiddleware,
-    secret_key = "s3cr3t-key-1234567890",
+    secret_key = os.getenv("SESSION_SECRET"),
     same_site = "lax",
     # https_only = True # NOTE: Turn it on in Production
 )
@@ -55,7 +62,7 @@ request_validator = RequestValidation(logger=logger)
 # ----------------------------- API Endpoints -----------------------------
 # Endpoint to execute a prompt based on the provided tag
 @app.post("/prompt/{tag}")
-async def execute_prompt(tag: str, request: Request = None) -> FileResponse:
+async def enqueue_prompt(tag: str, request: Request = None) -> JSONResponse:
     """
     Execute a prompt based on the provided tag and text.
     
@@ -84,29 +91,27 @@ async def execute_prompt(tag: str, request: Request = None) -> FileResponse:
     # Validate Count
     jwt_token = request.cookies.get("access_token", None)
 
-    prompt_service = PromptWrapper(
-        tag=tag,
-        request=request,
-        request_json=request_json,
-        jwt_token=jwt_token,
-        db_connection=app.state.db,
-        logger=logger)
+    try:
+        task = execute_prompt_task.delay(
+            tag,
+            request_json,
+            jwt_token,
+            app.state.db
+        )
+        return JSONResponse({
+            "task_id": task.id,
+            "status": "queued"
+        })
+    except Exception as e:
+        logger.error(f"Error enqueueing task: {e}")
+        return JSONResponse(
+            content={"error": str(e)},
+            status_code=500
+        )
 
-    file_path: str = await prompt_service.execute()
 
-    # Log the file path of the generated PDF
-    logger.debug(f"Generated PDF file path: {file_path}")
 
-    # Return the reponse if not file path
-    if not isinstance(file_path, str):
-        return file_path
-
-    # Return the response
-    return FileResponse(
-        path=file_path,
-        media_type='application/pdf',
-        filename='bdoc.pdf')
-
+# Endpoint to update the user count
 @app.put("/update/user/count/{count}")
 async def update_user_count(count: int, request: Request) -> JSONResponse:
     """
@@ -117,8 +122,11 @@ async def update_user_count(count: int, request: Request) -> JSONResponse:
     Returns:
         JSONResponse: A response indicating the success or failure of the operation.
     """
+    # Awaiting the request JSON
+    await request.json()
+
     # Validate the request
-    request_validator.validate_request(
+    await request_validator.validate_request(
         request=request,
         required_keys=["acess_token"]
     )
@@ -141,14 +149,40 @@ async def update_user_count(count: int, request: Request) -> JSONResponse:
         status_code=200
     )
 
+
+@app.get("/task/{task_id}")
+async def get_task_status(task_id: str) -> JSONResponse:
+    """
+    Get the status of a Celery task by its ID.
+
+    Args:
+        task_id (str): The ID of the Celery task.
+
+    Returns:
+        JSONResponse: A JSON response containing the task status and result if available.
+    """
+    result = AsyncResult(task_id, app=celery_app)
+    if result.state == "PENDING":
+        return JSONResponse({"task_id": task_id, "status": "pending"})
+    elif result.state == "SUCCESS":
+        return JSONResponse({
+            "task_id": task_id,
+            "status": "completed",
+            "result": result.result
+        })
+    elif result.state == "FAILURE":
+        return JSONResponse({
+            "task_id": task_id,
+            "status": "failed",
+            "error": str(result.result)
+        })
+    return JSONResponse({"task_id": task_id, "status": result.state})
+
 # Endpoint to get all the business names
 @app.get("/business/names")
 async def get_all_business_names() -> JSONResponse:
     """
-    Retrieve all Supporting Business Names
-
-    Args:
-        request (Request): Request Object
+    Retrieve all Supporting Business Names from the database.
 
     Returns:
         JSONResponse: JSON with key names and value list of business names
