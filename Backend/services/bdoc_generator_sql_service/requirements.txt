@@ -14,4 +14,4 @@ xhtml2pdf==0.2.15
 llama-api-client==0.1.2
 celery==5.3.1
 redis==4.6.0
-asyncio==3.0.4
+asyncio==4.0.0

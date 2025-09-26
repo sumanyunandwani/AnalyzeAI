@@ -7,7 +7,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from starlette.middleware.sessions import SessionMiddleware
 from core.request_validation import RequestValidation
 from celery_task.celery_app import celery_app
@@ -93,11 +93,12 @@ async def enqueue_prompt(tag: str, request: Request = None) -> JSONResponse:
     jwt_token = request.cookies.get("access_token", None)
 
     try:
+
         task = execute_prompt_task.delay(
-            tag,
-            request_json,
-            jwt_token,
-            app.state.db
+            tag=tag,
+            request_json=request_json,
+            jwt_token=jwt_token,
+            ip_address=request.client.host if request.client else None
         )
         return JSONResponse({
             "task_id": task.id,
@@ -165,6 +166,13 @@ async def get_task_status(task_id: str) -> JSONResponse:
     if result.state == "PENDING":
         return JSONResponse({"task_id": task_id, "status": "pending"})
     elif result.state == "SUCCESS":
+        file_path: str | None = result.result.get("file_path", None)
+        if file_path:
+            return FileResponse(
+                path=file_path,
+                filename="Bdoc-by-AnalyzeAI.pdf",
+                media_type='application/pdf'
+            )
         return JSONResponse({
             "task_id": task_id,
             "status": "completed",

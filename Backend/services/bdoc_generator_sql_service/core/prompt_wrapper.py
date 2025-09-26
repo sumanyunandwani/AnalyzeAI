@@ -12,7 +12,6 @@ import asyncio
 import os
 from logging import Logger
 from typing import Optional
-from fastapi import Request
 from fastapi.responses import JSONResponse
 from core.jwt_lib import JWTLibrary
 from core.db_service import DBService
@@ -28,10 +27,9 @@ class PromptWrapper:
     def __init__(
             self,
             tag: str,
-            request: Request,
+            ip_address: Optional[str],
             request_json: dict,
             jwt_token: Optional[str],
-            db_connection: AsyncSQLAlchemySingleton,
             logger: Logger = CustomLogger.setup_logger(__name__)
         ):
         """
@@ -44,10 +42,11 @@ class PromptWrapper:
         """
         # Initialize instance variables
         self.tag = tag
-        self.request = request
+        self.ip_address = ip_address
         self.request_json = request_json
         self.jwt_token = jwt_token
-        self.db_connection = db_connection
+        self.db_connection: AsyncSQLAlchemySingleton = AsyncSQLAlchemySingleton()
+        self.db_connection.init_engine()
         self.logger = logger
 
         # Derive SQL Script and Business Name from request
@@ -77,7 +76,6 @@ class PromptWrapper:
 
         # Initialize the user ID and IP address
         user_id: Optional[str] = None
-        ip_address: Optional[str] = None
 
         # Generate Request Hash
         request_id: str = await self._get_request_hash()
@@ -101,8 +99,7 @@ class PromptWrapper:
 
         # Check Capacity for User or IP
         if not is_user_logged_in:
-            ip_address = self.request.client.host
-            count = await self._execute_for_ip(ip_address)
+            count = await self._execute_for_ip(self.ip_address)
 
         else:
             # Get User ID from JWT Token
@@ -130,7 +127,7 @@ class PromptWrapper:
             )
         else:
             await self.db_service.update_count_for_ip(
-                ip_address=self.request.client.host,
+                ip_address=self.ip_address,
                 new_count=count - 1
             )
 
@@ -139,7 +136,7 @@ class PromptWrapper:
             file_path=file_path,
             request_id=request_id,
             user_id=user_id,
-            ip_address=ip_address
+            ip_address=self.ip_address
             )
 
         # Return the file path
@@ -154,7 +151,14 @@ class PromptWrapper:
             Optional[str]: 
                 The file path of the generated PDF document or None if no requests left.
         """
-        return asyncio.run(self.execute())
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop → safe to use asyncio.run()
+            return asyncio.run(self.execute())
+        else:
+            # Running loop → run task in it
+            return loop.run_until_complete(self.execute())
 
     async def _execute_for_ip(self, ip_address: str) -> Optional[int]:
         """

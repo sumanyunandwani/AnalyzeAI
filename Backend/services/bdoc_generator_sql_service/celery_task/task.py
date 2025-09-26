@@ -1,19 +1,19 @@
 """
 This module defines a Celery task for executing long-running prompt operations asynchronously.
 """
-from celery import shared_task
+from celery_task.celery_app import celery_app
 from core.prompt_wrapper import PromptWrapper
-from core.database_connection import AsyncSQLAlchemySingleton
 from core.custom_logger import CustomLogger
 
 logger = CustomLogger.setup_logger(__name__)
 
-@shared_task(bind=True)
+@celery_app.task(name="celery_task.task.execute_prompt_task", bind=True)
 def execute_prompt_task(
-    tag: str,
-    request_json: dict,
-    jwt_token: str | None,
-    db_connection: AsyncSQLAlchemySingleton
+        _,
+        tag: str,
+        request_json: dict[str, str],
+        jwt_token: str | None,
+        ip_address: str | None = None
     ) -> dict:
     """
     Run long-running prompt execution in Celery worker.
@@ -22,10 +22,9 @@ def execute_prompt_task(
 
         prompt_service = PromptWrapper(
             tag=tag,
-            request=None,
+            ip_address=ip_address,
             request_json=request_json,
             jwt_token=jwt_token,
-            db_connection=db_connection,
             logger=logger
         )
 
@@ -33,6 +32,6 @@ def execute_prompt_task(
 
         return {"status": "completed", "file_path": file_path}
 
-    except (ValueError, TypeError, AttributeError, RuntimeError) as e:
+    except Exception as e:
         logger.error("Task failed: %s", e)
         return {"status": "failed", "error": str(e)}
