@@ -99,7 +99,7 @@ class Podel:
         Returns:
             Optional[PodelNode]: The head of the Podel linked list or None if not found.
         """
-        self.logger.debug(f"Retrieving Podel for tag: {tag}")
-        self.logger.debug(f"Available Podels: {list(self.podels.keys())}")
-        self.logger.info(f"Podel gathered for tag: {tag} is {self.podels.get(tag, None)}")
+        self.logger.debug("Retrieving Podel for tag: %s", tag)
+        self.logger.debug("Available Podels: %s", list(self.podels.keys()))
+        self.logger.info("Podel gathered for tag: %s is %s", tag, self.podels.get(tag, None))
         return self.podels.get(tag, None)

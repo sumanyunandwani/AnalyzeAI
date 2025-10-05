@@ -8,12 +8,32 @@ services:
       - "8001:8001"
     depends_on:
       - db
+      - redis
     networks:
       - bdocs_network
     volumes:
       - ./bdoc_generator_sql_logs:/app/logs/
       - ./bdoc_generator_sql_pdfs:/app/pdfs/
       - ./bdoc_generator_sql_sqls:/app/sql_scripts/
+    environment:
+      REDIS_URL: redis://redis:6379/0
+
+  worker:
+    image: bdoc_generate_sql_app:latest
+    container_name: bdoc_generator_sql_worker
+    depends_on:
+      - db
+      - redis
+      - app
+    networks:
+      - bdocs_network
+    volumes:
+      - ./bdoc_generator_sql_logs:/app/logs/
+      - ./bdoc_generator_sql_pdfs:/app/pdfs/
+      - ./bdoc_generator_sql_sqls:/app/sql_scripts/
+    command: celery -A celery_app.celery_app worker --loglevel=info -Q prompts
+    environment:
+      REDIS_URL: redis://redis:6379/0
 
   db:
     image: postgres:15
@@ -27,6 +47,17 @@ services:
       - ./bdoc_generator_sql_data:/var/lib/postgresql/data
     networks:
       - bdocs_network
+  
+  redis:
+    image: redis:7
+    container_name: bdoc_generator_sql_redis
+    ports:
+      - "6379:6379"
+    depends_on:
+      - db
+    networks:
+      - bdocs_network
+
 networks:
   bdocs_network:
     driver: bridge

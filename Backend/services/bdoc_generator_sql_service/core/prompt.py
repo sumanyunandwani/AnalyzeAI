@@ -9,8 +9,8 @@ from typing import List, Dict, Optional
 from xhtml2pdf import pisa
 from fastapi import HTTPException
 from core.custom_logger import CustomLogger
-from podels.get_podel import Podel, PodelNode
 from core.prompt_executor import AsyncSingletonPromptExecutor
+from podels.get_podel import Podel, PodelNode
 
 class Prompt:
     """
@@ -230,12 +230,12 @@ class SQLPrompt():
         while _head:
 
             # Log the current prompt and its parameters
-            self.logger.debug(f"History: {chat_history}")
-            self.logger.debug(f"SQL Script: {sql_script}")
-            self.logger.debug(f"Business: {business}")
-            self.logger.debug(f"Need answer: {_head.need_answer}")
-            self.logger.debug(f"Error Message Dict: {_head.error_message_dict}")
-            self.logger.info(f"Executing prompt: {_head.prompt}")
+            self.logger.debug("Histoy: %s", chat_history)
+            self.logger.debug("SQL Script: %s", sql_script)
+            self.logger.debug("Business: %s", business)
+            self.logger.debug("Need answer: %s", _head.need_answer)
+            self.logger.debug("Error Message Dict: %s", _head.error_message_dict)
+            self.logger.info("Executing prompt: %s", _head.prompt)
 
             # Execute the prompt using the executor
             response, chat_history = await self._executor.execute_prompt(
@@ -244,13 +244,15 @@ class SQLPrompt():
                 )
 
             # Log the response
-            self.logger.info(f"Response: {response}")
+            self.logger.info("Response: %s", response)
 
             # Check if the prompt requires an answer and if it is present in the response
             if _head.need_answer:
                 if _head.need_answer not in response:
                     self.logger.error(
-                        f"Expected answer '{_head.need_answer}' not found in response: {response}")
+                        "Expected answer '%s' not found in response: %s",
+                        _head.need_answer,
+                        response)
                     raise HTTPException(
                         status_code=_head.error_message_dict["status_code"],
                         detail=_head.error_message_dict["message"])
