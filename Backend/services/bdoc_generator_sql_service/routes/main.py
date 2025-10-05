@@ -190,6 +190,10 @@ async def get_task_status(task_id: str) -> JSONResponse:
 @app.get("/business/names")
 async def get_all_business_names() -> JSONResponse:
     """
+    Retrieve all Supporting Business Names
+
+    Args:
+        request (Request): Request Object
     Retrieve all Supporting Business Names from the database.
 
     Returns:
